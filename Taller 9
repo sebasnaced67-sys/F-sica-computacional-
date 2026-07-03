@@ -1,0 +1,149 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+N = 128
+
+# Creamos el vector temporal lleno de ceros
+vector_caja = np.zeros(N)
+
+# Llenamos con unos la parte central (de la posición 39 a la 88 para tener 50 unos)
+vector_caja[39:89] = 1.0
+
+print("--- VALIDACIÓN PUNTO 1 ---")
+print("Antes del pulso (posición 38):", vector_caja[38])
+print("Inicio del pulso (posición 39):", vector_caja[39])
+print("Fin del pulso (posición 88):", vector_caja[88])
+print("Después del pulso (posición 89):", vector_caja[89])
+print(f"Tamaño del vector verificado: {vector_caja.shape}\n")
+
+
+
+
+
+matriz_fourier = np.zeros((N, N), dtype=complex)
+
+# Llenamos la matriz usando la definición de la DFT con dos ciclos for
+for k in range(N):
+    for n in range(N):
+        # Fórmula de la DFT multiplicada por el factor de normalización 1/sqrt(N)
+        matriz_fourier[k, n] = np.exp(-2j * np.pi * k * n / N) / np.sqrt(N)
+
+# Prueba de ortogonalidad (multiplicar la matriz por su transpuesta conjugada)
+matriz_adjunta = matriz_fourier.conj().T
+producto_identidad = np.dot(matriz_adjunta, matriz_fourier)
+
+# Extraemos el error máximo respecto a una matriz identidad real
+error_ortogonalidad = np.max(np.abs(producto_identidad - np.eye(N)))
+
+print("--- VALIDACIÓN PUNTO 2 ---")
+print("Tamaño de la matriz de Fourier:", matriz_fourier.shape)
+print("Error máximo de ortogonalidad (debe ser casi 0):", error_ortogonalidad, "\n")
+
+
+
+
+
+# Multiplicamos la matriz de 128x128 por el vector de 128 elementos
+vector_fourier = np.dot(matriz_fourier, vector_caja)
+
+print("--- VALIDACIÓN PUNTO 3 ---")
+print("Tamaño del vector en frecuencias:", vector_fourier.shape)
+print("Primeros 3 coeficientes complejos:")
+for i in range(3):
+    print(f" X[{i}] = {vector_fourier[i]}")
+print("")
+
+
+
+
+
+def recortar_frecuencias(vector_f, n_recorte):
+    """
+    Función que saca una copia del vector de Fourier y anula
+    los últimos 'n_recorte' elementos.
+    """
+    vector_recortado = vector_f.copy()
+    if n_recorte > 0:
+        # Usamos indexación negativa para reasignar el bloque final a cero
+        vector_recortado[-n_recorte:] = 0.0
+    return vector_recortado
+
+# Ejemplo de prueba recortando los últimos 20 elementos
+n_prueba = 20
+vector_filtrado = recortar_frecuencias(vector_fourier, n_prueba)
+
+print("--- VALIDACIÓN PUNTO 4 ---")
+print(f"Último elemento guardado (Posición {128-n_prueba-1}): X = {vector_filtrado[127-n_prueba]}")
+print(f"Primer elemento borrado (Posición {128-n_prueba}): X = {vector_filtrado[128-n_prueba]}")
+print(f"Último elemento borrado (Posición 127): X = {vector_filtrado[-1]}\n")
+
+
+
+
+fig, axs = plt.subplots(1, 3, figsize=(18, 4.5))
+
+# Gráfica 1: Función Caja en el Tiempo (Aquí quitamos el parámetro con error)
+axs[0].stem(vector_caja, linefmt='b-', markerfmt='bo', basefmt=' ')
+axs[0].set_title('Función Caja $x[n]$ (Dominio Temporal)')
+axs[0].set_xlabel('Índice (n)')
+axs[0].set_ylabel('Amplitud')
+axs[0].grid(True, linestyle='--')
+
+# Gráfica 2: Espectro de Magnitud Original
+axs[1].plot(np.abs(vector_fourier), 'g-', marker='o', markersize=2)
+axs[1].set_title('Espectro Original $|X[k]|$')
+axs[1].set_xlabel('Frecuencia (k)')
+axs[1].set_ylabel('Magnitud')
+axs[1].grid(True, linestyle='--')
+
+# Gráfica 3: Espectro Truncado
+axs[2].plot(np.abs(vector_filtrado), 'r-', marker='o', markersize=2)
+axs[2].set_title(f'Espectro Truncado ($n = {n_prueba}$)')
+axs[2].set_xlabel('Frecuencia (k)')
+axs[2].set_ylabel('Magnitud')
+axs[2].grid(True, linestyle='--')
+
+plt.tight_layout()
+plt.show()
+
+
+# Aprovechamos que la matriz es unitaria: F_inv = F_adjunta (Transpuesta conjugada)
+
+matriz_inversa = matriz_fourier.conj().T
+
+print("--- VALIDACIÓN PUNTO 5 ---")
+print("Matriz inversa calculada exitosamente.")
+print(f"Dimensiones de la matriz inversa: {matriz_inversa.shape}\n")
+
+
+
+# Definimos varios valores de 'n' (elementos a truncar) para ver la evolución
+niveles_truncamiento = [100, 60, 20, 0]
+
+fig_gibbs, axs_gibbs = plt.subplots(2, 2, figsize=(14, 10))
+fig_gibbs.suptitle('Análisis del Fenómeno de Gibbs variando el truncamiento ($n$)', fontsize=16)
+
+axs_gibbs = axs_gibbs.flatten()
+
+for i, n_val in enumerate(niveles_truncamiento):
+
+    v_filtrado = recortar_frecuencias(vector_fourier, n_val)
+    
+    # Multiplicamos la matriz inversa por el vector truncado
+    v_reconstruido_complejo = np.dot(matriz_inversa, v_filtrado)
+    
+    # Tomamos la parte real (los residuos imaginarios son errores de máquina de ~10^-16)
+    v_reconstruido = np.real(v_reconstruido_complejo)
+
+    axs_gibbs[i].plot(vector_caja, 'b--', label='Caja Original', alpha=0.5)
+    axs_gibbs[i].plot(v_reconstruido, 'r-', label=f'Reconstrucción')
+    axs_gibbs[i].set_title(f'Truncamiento: $n = {n_val}$ (Modos altos eliminados)')
+    axs_gibbs[i].set_xlabel('Índice (n)')
+    axs_gibbs[i].set_ylabel('Amplitud')
+    axs_gibbs[i].grid(True, linestyle='--')
+    axs_gibbs[i].legend()
+
+plt.tight_layout()
+plt.subplots_adjust(top=0.92)
+plt.show()
