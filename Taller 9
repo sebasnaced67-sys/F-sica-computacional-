@@ -10,7 +10,7 @@ vector_caja = np.zeros(N)
 # Llenamos con unos la parte central (de la posición 39 a la 88 para tener 50 unos)
 vector_caja[39:89] = 1.0
 
-print("--- VALIDACIÓN PUNTO 1 ---")
+print("PUNTO 1")
 print("Antes del pulso (posición 38):", vector_caja[38])
 print("Inicio del pulso (posición 39):", vector_caja[39])
 print("Fin del pulso (posición 88):", vector_caja[88])
@@ -36,7 +36,7 @@ producto_identidad = np.dot(matriz_adjunta, matriz_fourier)
 # Extraemos el error máximo respecto a una matriz identidad real
 error_ortogonalidad = np.max(np.abs(producto_identidad - np.eye(N)))
 
-print("--- VALIDACIÓN PUNTO 2 ---")
+print("PUNTO 2")
 print("Tamaño de la matriz de Fourier:", matriz_fourier.shape)
 print("Error máximo de ortogonalidad (debe ser casi 0):", error_ortogonalidad, "\n")
 
@@ -47,7 +47,7 @@ print("Error máximo de ortogonalidad (debe ser casi 0):", error_ortogonalidad, 
 # Multiplicamos la matriz de 128x128 por el vector de 128 elementos
 vector_fourier = np.dot(matriz_fourier, vector_caja)
 
-print("--- VALIDACIÓN PUNTO 3 ---")
+print("PUNTO 3")
 print("Tamaño del vector en frecuencias:", vector_fourier.shape)
 print("Primeros 3 coeficientes complejos:")
 for i in range(3):
@@ -73,7 +73,7 @@ def recortar_frecuencias(vector_f, n_recorte):
 n_prueba = 20
 vector_filtrado = recortar_frecuencias(vector_fourier, n_prueba)
 
-print("--- VALIDACIÓN PUNTO 4 ---")
+print("PUNTO 4")
 print(f"Último elemento guardado (Posición {128-n_prueba-1}): X = {vector_filtrado[127-n_prueba]}")
 print(f"Primer elemento borrado (Posición {128-n_prueba}): X = {vector_filtrado[128-n_prueba]}")
 print(f"Último elemento borrado (Posición 127): X = {vector_filtrado[-1]}\n")
@@ -112,7 +112,7 @@ plt.show()
 
 matriz_inversa = matriz_fourier.conj().T
 
-print("--- VALIDACIÓN PUNTO 5 ---")
+print("PUNTO 5")
 print("Matriz inversa calculada exitosamente.")
 print(f"Dimensiones de la matriz inversa: {matriz_inversa.shape}\n")
 
@@ -146,4 +146,5 @@ for i, n_val in enumerate(niveles_truncamiento):
 
 plt.tight_layout()
 plt.subplots_adjust(top=0.92)
+plt.show()
 plt.show()
